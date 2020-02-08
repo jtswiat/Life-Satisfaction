@@ -1,0 +1,57 @@
+---
+title: "STAT 441 Project"
+author: "Matthew Fultz"
+date: "20/01/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load in training data and summarize it
+dat.orig <- read.csv("train.csv")
+head(dat.orig)
+```
+```{r}
+# Load plotting and grouping libraries
+library(ggplot2)
+library(dplyr)
+library(gtools)
+
+#############################################################
+# Set the variable we want to analyze
+var <- "v15"
+#############################################################
+
+# Construct dataframe for summary
+dat.small <- dat.orig[, c(var,"satisfied")]
+dat.small$satisfied <- as.numeric(dat.small[, 2])
+dat.small$level <- as.character(dat.small[, 1])
+
+# Aggregate results (adds columns avg and n)
+dat.small.summary <- 
+  dat.small %>% 
+  group_by(level) %>%
+  summarise(avg=mean(satisfied), n=n())
+
+# Reorder the dataframe using mixedsort
+i <- match(mixedsort(dat.small.summary$level),
+           dat.small.summary$level)
+dat.small.summary <- dat.small.summary[i,]
+
+# Convert to factor variable, preserving order
+dat.small.summary$level <- factor(dat.small.summary$level,
+                                  dat.small.summary$level)
+
+# Print the dataframe
+dat.small.summary
+
+###########################################################
+
+
+
+
+```
+
