@@ -1,0 +1,273 @@
+Fullname,df_name
+Able to take active role in political group,v1
+Feeling of safety of walking alone in local area after dark,v2
+Age of respondent calculated,v3
+First ancestry European Standard Classification of Cultural and Ethnic Groups,v4
+Second ancestry European Standard,v5
+Improve knowledge/skills: course/lecture/conference last 12 months,v6
+Worn or displayed campaign badge/sticker last 12 months,v7
+Boycotted certain products last 12 months,v8
+Belong to minority ethnic group in country,v9
+Born in country,v10
+Ever had children living in household,v11
+Children living at home or not,v12
+Could not get going how often past week,v13
+Feel closer to a particular party than all other parties,v14
+Doing last 7 days: community or military service,v15
+Partner doing last 7 days: community or military service,v16
+Country of birth,v17
+Contacted politician or government official last 12 months,v18
+Confident in own ability to participate in politics,v19
+Region,v20
+Respondent or household member victim of burglary/assault last 5 years,v21
+Control paid work last 7 days,v22
+Partner control paid work last 7 days,v23
+Citizen of country,v24
+Citizenship,v25
+Doing last 7 days: don't know,v26
+Partner doing last 7 days: don't know,v27
+Doing last 7 days: no answer,v28
+Partner doing last 7 days: no answer,v29
+Partner doing last 7 days: not applicable,v30
+Doing last 7 days: other,v31
+Partner doing last 7 days: other,v32
+Doing last 7 days: refusal,v33
+Partner doing last 7 days: refusal,v34
+Domicile respondent's description,v35
+Doing last 7 days: permanently sick or disabled,v36
+Partner doing last 7 days: permanently sick or disabled,v37
+Discrimination of respondent's group: age,v38
+Discrimination of respondent's group: don't know,v39
+Discrimination of respondent's group: disability,v40
+Discrimination of respondent's group: ethnic group,v41
+Discrimination of respondent's group: gender,v42
+Member of a group discriminated against in this country,v43
+Discrimination of respondent's group: language,v44
+Discrimination of respondent's group: no answer,v45
+Discrimination of respondent's group: not applicable,v46
+Discrimination of respondent's group: nationality,v47
+Discrimination of respondent's group: other grounds,v48
+Discrimination of respondent's group: colour or race,v49
+Discrimination of respondent's group: refusal,v50
+Discrimination of respondent's group: religion,v51
+Discrimination of respondent's group: sexuality,v52
+Ever been divorced/had civil union dissolved,v53
+Doing last 7 days: education,v54
+Partner doing last 7 days: education,v55
+Highest level of education,v56
+Highest level of education,v57
+Father's highest level of education,v58
+Father's highest level of education,v59
+Mother's highest level of education,v60
+Mother's highest level of education,v61
+Partner's highest level of education,v62
+Partner's highest level of education,v63
+Years of full-time education completed,v64
+Highest level of education ES - ISCED,v65
+Father's highest level of education ES - ISCED,v66
+Mother's highest level of education ES - ISCED,v67
+Partner's highest level of education ES - ISCED,v68
+Number of employees respondent has/had,v69
+Employment relation,v70
+Partner's employment relation,v71
+Father's employment status when respondent 14,v72
+Mother's employment status when respondent 14,v73
+Enjoyed life how often past week,v74
+Establishment size,v75
+European Union: European unification go further or gone too far,v76
+Father born in country,v77
+Country of birth father,v78
+Felt depressed how often past week,v79
+Felt everything did as effort how often past week,v80
+Felt lonely how often past week,v81
+Felt sad how often past week,v82
+Gays and lesbians free to live life as they wish,v83
+Government should reduce differences in income levels,v84
+Gender,v85
+Gender of tenth person in household,v86
+Gender of eleventh person in household,v87
+Gender of twelfth person in household,v88
+Gender of thirteenth person in household,v89
+Gender of second person in household,v90
+Gender of third person in household,v91
+Gender of fourth person in household,v92
+Gender of fifth person in household,v93
+Gender of sixth person in household,v94
+Gender of seventh person in household,v95
+Gender of eighth person in household,v96
+Gender of ninth person in household,v97
+How happy are you,v98
+Subjective general health,v99
+Number of people living regularly as member of household,v100
+Feeling about household's income nowadays,v101
+Main source of household income,v102
+Main source of household income,v103
+Household's total net income all sources,v104
+Hampered in daily activities by illness/disability/infirmity/mental problem,v105
+Doing last 7 days: housework looking after children others,v106
+Partner doing last 7 days: housework looking after children others,v107
+Have a set 'basic' or contracted number of hours,v108
+Immigration bad or good for country's economy,v109
+Allow many/few immigrants of different race/ethnic group from majority,v110
+Allow many/few immigrants from poorer countries outside Europe,v111
+Important to try new and different things in life,v112
+Important to care for nature and environment,v113
+Important to make own decisions and be free,v114
+Important to seek fun and things that give pleasure,v115
+Important to be rich have money and expensive things,v116
+Important to live in secure and safe surroundings,v117
+Important to follow traditions and customs,v118
+Allow many/few immigrants of same race/ethnic group as majority,v119
+Country's cultural life undermined or enriched by immigrants,v120
+Immigrants make country worse or better place to live,v121
+How many people with whom you can discuss intimate and personal matters,v122
+Place of interview: East West Germany,v123
+End of interview day of month,v124
+Start of interview day of month,v125
+End of interview hour,v126
+End of interview minute,v127
+End of interview month,v128
+Start of interview month,v129
+Start of interview hour,v130
+Start of interview minute,v131
+Interview length in minutes main questionnaire,v132
+End of interview year,v133
+Start of interview year,v134
+Allowed to influence policy decisions about activities of organisation,v135
+Important to seek adventures and have an exciting life,v136
+Important to behave properly,v137
+Important to think new ideas and being creative,v138
+Important that people are treated equally and have equal opportunities,v139
+Important to do what is told and follow rules,v140
+Important to have a good time,v141
+Important to help people and care for others well-being,v142
+Important to be loyal to friends and devote to people close,v143
+Important to be humble and modest not draw attention,v144
+Important to get respect from others,v145
+Important to show abilities and be admired,v146
+Important that government is strong and ensures safety,v147
+Important to be successful and that people recognize achievements,v148
+Important to understand different people,v149
+Occupation ISCO08,v150
+Occupation partner ISCO08,v151
+Responsible for supervising other employees,v152
+What year you first came to live in country,v153
+Language most often spoken at home: first mentioned,v154
+Language most often spoken at home: second mentioned,v155
+Placement on left right scale,v156
+Ever lived with a partner without being married,v157
+Main activity last 7 days,v158
+Legal marital status post coded,v159
+Legal marital status,v160
+Country of birth mother,v161
+Member of trade union or similar organisation,v162
+Main activity last 7 days. All respondents. Post coded,v163
+Partner's main activity last 7 days,v164
+Mother born in country,v165
+Administration of supplementary questionnaire,v166
+Industry NACE rev.2,v167
+Number of people responsible for in job,v168
+Father's occupation when respondent 14,v169
+Mother's occupation when respondent 14,v170
+Lives with husband/wife/partner at household grid,v171
+Taken part in lawful public demonstration last 12 months,v172
+Ever had a paid job,v173
+Year last in paid job,v174
+Doing last 7 days: paid work,v175
+Partner doing last 7 days: paid work,v176
+How interested in politics,v177
+Most people try to take advantage of you or try to be fair,v178
+Most of the time people helpful or mostly looking out for themselves,v179
+Most people can be trusted or you can't be too careful,v180
+How often pray apart from at religious services,v181
+How close to party,v182
+Political system allows people to have influence on politics,v183
+Political system allows people to have a say in what government does,v184
+Regional unit,v185
+How often attend religious services apart from special occasions,v186
+Belonging to particular religion or denomination,v187
+Ever belonging to particular religion or denomination,v188
+How religious are you,v189
+Religion or denomination belonging to at present,v190
+Religion or denomination belonging to in the past,v191
+Tenth person in household: relationship to respondent,v192
+Eleventh person in household: relationship to respondent,v193
+Twelfth person in household: relationship to respondent,v194
+Thirteenth person in household: relationship to respondent,v195
+Second person in household: relationship to respondent,v196
+Third person in household: relationship to respondent,v197
+Fourth person in household: relationship to respondent,v198
+Fifth person in household: relationship to respondent,v199
+Sixth person in household: relationship to respondent,v200
+Seventh person in household: relationship to respondent,v201
+Eighth person in household: relationship to respondent,v202
+Ninth person in household: relationship to respondent,v203
+Tenth person in household: relationship to respondent,v204
+Eleventh person in household: relationship to respondent,v205
+Twelfth person in household: relationship to respondent,v206
+Thirteenth person in household: relationship to respondent,v207
+Second person in household: relationship to respondent,v208
+Third person in household: relationship to respondent,v209
+Fourth person in household: relationship to respondent,v210
+Fifth person in household: relationship to respondent,v211
+Sixth person in household: relationship to respondent,v212
+Seventh person in household: relationship to respondent,v213
+Eighth person in household: relationship to respondent,v214
+Ninth person in household: relationship to respondent,v215
+Relationship with husband/wife/partner currently living with,v216
+Doing last 7 days: retired,v217
+Partner doing last 7 days: retired,v218
+Take part in social activities compared to others of same age,v219
+How often socially meet with friends relatives or colleagues,v220
+Signed petition last 12 months,v221
+Sleep was restless how often past week,v222
+How satisfied with the way democracy works in country,v223
+How satisfied with present state of economy in country,v224
+State of education in country nowadays,v225
+How satisfied with the national government,v226
+State of health services in country nowadays,v227
+Day of month supplementary questionnaire,v228
+Month supplementary questionnaire,v229
+Year supplementary questionnaire,v230
+What type of organisation work/worked for,v231
+Trust in the European Parliament,v232
+Trust in the legal system,v233
+Trust in the police,v234
+Trust in politicians,v235
+Trust in country's parliament,v236
+Trust in political parties,v237
+Trust in the United Nations,v238
+TV watching news/politics/current affairs on average weekday,v239
+TV watching total time on average weekday,v240
+Any period of unemployment and work seeking lasted 12 months or more,v241
+Ever unemployed and seeking work for a period more than three months,v242
+Any period of unemployment and work seeking within last 5 years,v243
+Doing last 7 days: unemployed actively looking for job,v244
+Partner doing last 7 days: unemployed actively looking for job,v245
+Doing last 7 days: unemployed not actively looking for job,v246
+Partner doing last 7 days: unemployed not actively looking for job,v247
+Voted last national election,v248
+Allowed to decide how daily work is organised,v249
+Total contracted hours per week in main job overtime excluded,v250
+Total hours normally worked per week in main job overtime included,v251
+Hours normally worked a week in main job overtime included partner,v252
+Were happy how often past week,v253
+Paid work in another country period more than 6 months last 10 years,v254
+Employment contract unlimited or limited duration,v255
+Worked in another organisation or association last 12 months,v256
+Worked in political party or action group last 12 months,v257
+Year of birth,v258
+Year of birth of tenth person in household,v259
+Year of birth of eleventh person in household,v260
+Year of birth of twelfth person in household,v261
+Year of birth of thirteenth person in household,v262
+Year of birth of second person in household,v263
+Year of birth of third person in household,v264
+Year of birth of fourth person in household,v265
+Year of birth of fifth person in household,v266
+Year of birth of sixth person in household,v267
+Year of birth of seventh person in household,v268
+Year of birth of eighth person in household,v269
+Year of birth of ninth person in household,v270
+country,cntry
+id,id
