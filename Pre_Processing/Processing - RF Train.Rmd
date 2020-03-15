@@ -1,0 +1,862 @@
+---
+title: "Processing - Train"
+author: "Matthew Fultz"
+date: "05/03/2020"
+output: pdf_document
+---
+
+```{r}
+# Read in the training data csv
+dat.train <- read.csv("train.csv")
+
+# Take a peek at our dataframe
+head(dat.train)
+```
+
+```{r}
+# Load the plyr library for using mapvalues
+library(plyr)
+
+# Create a new object dat equal to data.train
+dat <- dat.train
+
+# Convert satisfied from integer to factor
+dat$satisfied <- mapvalues(as.factor(dat$satisfied),
+                           c("0", "1"), c("No", "Yes"))
+
+# Get rid of the id field (it's not used in analysis)
+dat$id <- NULL
+
+# Combine columns for .a, .b, .c into a single one
+dat$v1 <- mapvalues(dat$v1, levels(dat$v1), 
+                    c(rep("ABC", 3), 
+                      sapply(c(0, 1, 10, 2:9), paste0)))
+dat$v2 <- mapvalues(dat$v2, levels(dat$v2),
+                    c(rep("ABC", 3), sapply(1:4, paste0)))
+
+# Impute .a as median age
+dat$v3 <- as.numeric(as.character(dat$v3))
+dat$v3[is.na(dat$v3)] <- median(dat$v3, na.rm = TRUE)
+
+# Make dummy variable for Jewish?
+dat$Jewish <- as.factor((as.numeric(dat$v4=="22000")+
+                           as.numeric(dat$v5=="22000"))>0)
+dat$Jewish <- mapvalues(dat$Jewish, c("FALSE", "TRUE"), c("Yes", "No"))
+
+# Make dummy variable for Roma?
+dat$Roma <- as.factor((as.numeric(dat$v4=="14100")+
+                           as.numeric(dat$v5=="14100"))>0)
+dat$Roma <- mapvalues(dat$Roma, c("FALSE", "TRUE"), c("Yes", "No"))
+
+# (*) Get rid of ethnicity variables (at least for now)
+dat$v4 <- NULL
+dat$v5 <- NULL
+
+# Combine .a, .b, .c into own level
+dat$v6 <- mapvalues(dat$v6, levels(dat$v6),
+                    c(rep("ABC", 3), "Yes", "No"))
+dat$v7 <- mapvalues(dat$v7, levels(dat$v7),
+                    c(rep("ABC", 3), "Yes", "No"))
+dat$v8 <- mapvalues(dat$v8, levels(dat$v8),
+                    c(rep("ABC", 3), "Yes", "No"))
+
+# Switch .c to NA, combine .a and .b
+dat$v9 <- mapvalues(dat$v9, levels(dat$v9),
+                    c("AB", "AB", "C", "Yes", "No"))
+
+# Add .a, .b, .c to No
+dat$v10 <- mapvalues(dat$v10, levels(dat$v10),
+                    c("No", "No", "No", "Yes", "No"))
+
+# (*) Just rename factor levels (should consider combining)
+dat$v11 <- mapvalues(dat$v11, levels(dat$v11),
+                    c("A", "B", "C", "D", "Yes", "No"))
+
+# Combine .a into No
+# dat$v12 <- mapvalues(dat$v12, levels(dat$v12),
+#                    c("No", "Yes", "No"))
+dat$v12 <- NULL
+
+# Combine .a and .c and make .b stand alone
+dat$v13 <- mapvalues(dat$v13, levels(dat$v13),
+                    c("AC", "B", "AC", sapply(1:4, paste0)))
+
+# Combine .b and .c, let .a stand alone
+dat$v14 <- mapvalues(dat$v14, levels(dat$v14),
+                    c("A", "BC", "BC", "Yes", "No"))
+
+# Rename levels Yes and No
+dat$v15 <- as.factor(dat$v15)
+dat$v15 <- mapvalues(dat$v15, levels(dat$v15), c("No", "Yes"))
+
+# Create a Last7Days variable using PLS
+dat$Last7Days <- -0.08120 - 1.71056*dat$v26 - 0.83897*dat$v36 +
+  0.50567*dat$v54 + 0.22340*dat$v106 + 0.24615*dat$v175 + 
+  0.08128*dat$v217 - 0.80363*dat$v244 - 0.63396*dat$v246
+
+# Create a PaLast7Days variable using PLS
+dat$PaLast7Days <- 0.01484 - 0.51016*dat$v29 - 0.19290*dat$v30 -
+  0.77975*dat$v34 - 0.31778*dat$v37 + 0.49357*dat$v55 +
+  0.1885*dat$v107 + 0.30803*dat$v176 + 0.22036*dat$v218 -
+  0.61949*dat$v245 - 0.28648*dat$v247
+
+# The count for Yes is too low to be viable
+dat$v16 <- NULL
+
+# (*) Unnecessary
+dat$v17 <- NULL
+
+# Merge .a, .c into No and make B standalone
+dat$v18 <- mapvalues(dat$v18, levels(dat$v18),
+                    c("No", "B", "No", "Yes", "No"))
+
+# Merge .a, .c leave B standalone
+dat$v19 <- mapvalues(dat$v19, levels(dat$v19), 
+                    c("AC", "B", "AC", sapply(c(0, 1, 10, 2:9), paste0)))
+
+# (*) Too complex, could revisit
+dat$v20 <- NULL
+
+# Combine .a, .b, .c
+dat$v21 <- mapvalues(dat$v21, levels(dat$v21),
+                    c("ABC", "ABC", "ABC", "Yes", "No"))
+
+# Combine .b, .c, .d, leave A separate
+dat$v22 <- mapvalues(dat$v22, levels(dat$v22),
+                    c("A", "BCD", "BCD", "BCD", "Yes", "No"))
+dat$v23 <- mapvalues(dat$v23, levels(dat$v23),
+                    c("A", "BCD", "BCD", "BCD", "Yes", "No"))
+
+# Merge .a, .b, .c into Yes
+dat$v24 <- mapvalues(dat$v24, levels(dat$v24),
+                    c("Yes", "Yes", "Yes", "Yes", "No"))
+
+# (*) Probably not important
+dat$v25 <- NULL
+
+# Add v26, v28, v33 (Last 7 Days: DK, NR, Refusal)
+dat$Last7.NR <- dat$v26 + dat$v28 + dat$v33
+dat$Last7.NR <- mapvalues(as.factor(dat$Last7.NR > 0),
+                           c("FALSE", "TRUE"), 
+                           c("No", "Yes"))
+dat$v26 <- NULL
+dat$v28 <- NULL
+dat$v33 <- NULL
+
+# Add v27, v29, v34 (Last 7 Days Partner: DK, NR, Refusal)
+dat$PLast7.NR <- dat$v27 + dat$v29 + dat$v34
+dat$PLast7.NR <- mapvalues(as.factor(dat$PLast7.NR > 0),
+                           c("FALSE", "TRUE"), 
+                           c("No", "Yes"))
+dat$v27 <- NULL
+dat$v29 <- NULL
+dat$v34 <- NULL
+
+# Convert to Yes, No
+dat$v31 <- mapvalues(as.factor(dat$v31), c(0, 1), c("No", "Yes"))
+dat$v32 <- mapvalues(as.factor(dat$v32), c(0, 1), c("No", "Yes"))
+
+# Merge .a, .b, .c into one then leave others
+dat$v35 <- mapvalues(dat$v35, levels(dat$v35),
+                    c("ABC", "ABC", "ABC", sapply(1:5, paste0)))
+
+# Make feature for discrimination using partial least squares
+dat$Discriminated <- -0.44591 - 0.77258*dat$v38 - 0.33327*dat$v40 +
+  0.25655*dat$v42 - 0.33933*dat$v44 + 0.57240*dat$v46 + 0.67385*dat$v51
+
+# Convert to Yes, No
+dat$v36 <- mapvalues(as.factor(dat$v36), c(0, 1), c("No", "Yes"))
+dat$v37 <- mapvalues(as.factor(dat$v37), c(0, 1), c("No", "Yes"))
+dat$v38 <- mapvalues(as.factor(dat$v38), c(0, 1), c("No", "Yes"))
+dat$v39 <- mapvalues(as.factor(dat$v39), c(0, 1), c("No", "Yes"))
+dat$v40 <- mapvalues(as.factor(dat$v40), c(0, 1), c("No", "Yes"))
+dat$v41 <- mapvalues(as.factor(dat$v41), c(0, 1), c("No", "Yes"))
+dat$v42 <- mapvalues(as.factor(dat$v42), c(0, 1), c("No", "Yes"))
+
+# Combine A, B, C
+dat$v43 <- mapvalues(dat$v43, levels(dat$v43),
+                    c("ABC", "ABC", "ABC", "Yes", "No"))
+
+# Convert to Yes, No
+dat$v44 <- mapvalues(as.factor(dat$v44), c(0, 1), c("No", "Yes"))
+
+# Remove feature
+dat$v45 <- NULL
+
+# Convert to Yes, No
+dat$v46 <- mapvalues(as.factor(dat$v46), c(0, 1), c("No", "Yes"))
+dat$v47 <- mapvalues(as.factor(dat$v47), c(0, 1), c("No", "Yes"))
+dat$v48 <- mapvalues(as.factor(dat$v48), c(0, 1), c("No", "Yes"))
+dat$v49 <- mapvalues(as.factor(dat$v49), c(0, 1), c("No", "Yes"))
+
+# Remove feature
+dat$v50 <- NULL
+
+# Convert to Yes, No
+dat$v51 <- mapvalues(as.factor(dat$v51), c(0, 1), c("No", "Yes"))
+dat$v52 <- mapvalues(as.factor(dat$v52), c(0, 1), c("No", "Yes"))
+
+# Merge .a, .c and keep B on its own
+# dat$v53 <- mapvalues(dat$v53, levels(dat$v53),
+#                    c("AC", "B", "AC", "Yes", "No"))
+dat$v53 <- NULL
+
+# Convert to Yes, No
+dat$v54 <- mapvalues(as.factor(dat$v54), c(0, 1), c("No", "Yes"))
+dat$v55 <- mapvalues(as.factor(dat$v55), c(0, 1), c("No", "Yes"))
+
+# (*) Get rid of exogenous education variables
+dat$v56 <- NULL
+dat$v57 <- NULL
+dat$v58 <- NULL
+dat$v59 <- NULL
+dat$v60 <- NULL
+dat$v61 <- NULL
+dat$v62 <- NULL
+dat$v63 <- NULL
+
+# Convert to numeric and bucket .a, .b, .c into NA
+dat$v64 <- as.numeric(as.character(dat$v64))
+dat$x64 <- ifelse(is.na(dat$v64), 1, 0)
+dat$v64[is.na(dat$v64)] <- median(dat$v64, na.rm = TRUE)
+
+# Combine .a, .b, .c into one bucket
+dat$v65 <- mapvalues(dat$v65, levels(dat$v65),
+                     c("ABC", "ABC", "ABC", "1", "2", "3",
+                       "4", "5", "Other", "6", "7"))
+
+# (*) Consider imputing NA Combine .b, .c into one and leave .a alone
+dat$v66 <- mapvalues(dat$v66, levels(dat$v66),
+                     c("M", "A", "BC", "BC", "1", "2", "3",
+                       "4", "5", "Other", "6", "7"))
+dat$v67 <- mapvalues(dat$v67, levels(dat$v67),
+                     c("M", "A", "BC", "BC", "1", "2", "3",
+                       "4", "5", "Other", "6", "7"))
+
+# (*) Consider imputing NA, leave A, B, C, D separate
+dat$v68 <- mapvalues(dat$v68, levels(dat$v68),
+                     c("M", "A", "B", "C", "D", "1", "2", 
+                       "3", "4", "5", "Other", "6", "7"))
+
+# Combine .a, .b, .c, .d into NA
+dat$v69 <- as.numeric(as.character(dat$v69))
+dat$x69 <- ifelse(is.na(dat$v69), 1, 0)
+dat$v69[is.na(dat$v69)] <- 0
+
+# Combine .b and .d then leave .a, .c on their own
+dat$v70 <- mapvalues(dat$v70, levels(dat$v70),
+                     c("A", "BD", "C", "BD", "1", "2", "3"))
+
+# Combine .b and .c then leave .a and .d
+dat$v71 <- mapvalues(dat$v71, levels(dat$v71),
+                     c("A", "BC", "BC", "D", "1", "2", "3"))
+
+# Combine .a, .c, leave B alone
+dat$v72 <- mapvalues(dat$v72, levels(dat$v72),
+                     c("AC", "B", "AC", "1", "2", "3", "4"))
+dat$v73 <- mapvalues(dat$v73, levels(dat$v73),
+                     c("AC", "B", "AC", "1", "2", "3", "4"))
+dat$v74 <- mapvalues(dat$v74, levels(dat$v74),
+                     c("AC", "B", "AC", "1", "2", "3", "4"))
+
+# Combine .b, .d and leave .a, .c alone
+dat$v75 <- mapvalues(dat$v75, levels(dat$v75),
+                     c("A", "BD", "C", "BD", "1", "2", "3", "4", "5"))
+
+# Combine .a, .b, .c into one
+dat$v76 <- mapvalues(dat$v76, levels(dat$v76),
+                    c("ABC", "ABC", "ABC", 
+                      sapply(c(0, 1, 10, 2:9), paste0)))
+
+# Combine .a, .b, .c into one
+dat$v77 <- mapvalues(dat$v77, levels(dat$v77),
+                    c("ABC", "ABC", "ABC", "Yes", "No"))
+
+# (*) Remove for now, too complex
+dat$v78 <- NULL
+
+# Combine .a, .c and leave .b alone
+dat$v79 <- mapvalues(dat$v79, levels(dat$v79),
+                     c("AC", "B", "AC", "1", "2", "3", "4"))
+dat$v80 <- mapvalues(dat$v80, levels(dat$v80),
+                     c("AC", "B", "AC", "1", "2", "3", "4"))
+dat$v81 <- mapvalues(dat$v81, levels(dat$v81),
+                     c("AC", "B", "AC", "1", "2", "3", "4"))
+dat$v82 <- mapvalues(dat$v82, levels(dat$v82),
+                     c("AC", "B", "AC", "1", "2", "3", "4"))
+dat$v83 <- mapvalues(dat$v83, levels(dat$v83),
+                     c("AC", "B", "AC", "1", "2", "3", "4", "5"))
+
+# Combine .a, .b, .c into one level
+dat$v84 <- mapvalues(dat$v84, levels(dat$v84),
+                     c("ABC", "ABC", "ABC", "1", "2", "3", "4", "5"))
+
+# Fold NR into Female
+dat$v85 <- mapvalues(dat$v85, levels(dat$v85), c("F", "M", "F"))
+
+# Create gender dissimilarity feature to replace v86-v97
+temp <- sapply(dat[,which(colnames(dat)=="v86"):
+                        which(colnames(dat)=="v97")],
+               function(x){as.numeric(as.character(x))})
+temp <- -2*temp+3
+dat$GenderSimilarity <- apply(temp, 1, function(x){sum(x, na.rm=T)}) *
+  ifelse(dat$v85=="F", -1, 1)
+
+# Clear out unused gender columns
+dat$v86 <- NULL
+dat$v87 <- NULL
+dat$v88 <- NULL
+dat$v89 <- NULL
+dat$v90 <- NULL
+dat$v91 <- NULL
+dat$v92 <- NULL
+dat$v93 <- NULL
+dat$v94 <- NULL
+dat$v95 <- NULL
+dat$v96 <- NULL
+dat$v97 <- NULL
+
+# Combine .a, .b, and .c
+dat$v98 <- mapvalues(dat$v98, levels(dat$v98),
+                    c("ABC", "ABC", "ABC", 
+                      sapply(c(0, 1, 10, 2:9), paste0)))
+dat$v99 <- mapvalues(dat$v99, levels(dat$v99),
+                     c("ABC", "ABC", "ABC", "1", "2", "3", "4", "5"))
+
+# Convert to numeric (making .a, .b, .c NA's)
+dat$v100 <- as.numeric(as.character(dat$v100))
+dat$v100[is.na(dat$v100)] <- median(dat$v100, na.rm = TRUE)
+
+# Combine B and C and leave A separate
+dat$v101 <- mapvalues(dat$v101, levels(dat$v101),
+                     c("A", "BC", "BC", "1", "2", "3", "4"))
+
+# Question is redundant, same as 103
+dat$v102 <- NULL
+
+# Leave A, B, C separate but consider combining C with something later
+dat$v103 <- mapvalues(dat$v103, levels(dat$v103),
+                     c("A", "B", "C", "1", "2", "3",
+                       "4", "5", "6", "7", "8"))
+
+# (*) Consider imputing NA, combine A, C and leave B on its own
+dat$v104 <- mapvalues(dat$v104, levels(dat$v104), 
+                    c("M", "AC", "B", "AC",
+                      sapply(c(1, 10, 2:9), paste0)))
+
+# Combine A, B, C
+dat$v105 <- mapvalues(dat$v105, levels(dat$v105), 
+                      c("ABC", "ABC", "ABC", "1", "2", "3"))
+
+# Convert to Yes, No
+dat$v106 <- mapvalues(as.factor(dat$v106), c(0, 1), c("No", "Yes"))
+dat$v107 <- mapvalues(as.factor(dat$v107), c(0, 1), c("No", "Yes"))
+
+# Rename .a, .b to A and B resp
+dat$v108 <- mapvalues(dat$v108, levels(dat$v108), c("A", "B", "No", "Yes"))
+
+# Combine A, B, and C
+dat$v109 <- mapvalues(dat$v109, levels(dat$v109),
+                      c("ABC", "ABC", "ABC", 
+                      sapply(c(0, 1, 10, 2:9), paste0)))
+
+# Combine A and C, leave B alone
+dat$v110 <- mapvalues(dat$v110, levels(dat$v110), 
+                      c("AC", "B", "AC", "1", "2", "3", "4"))
+
+# Combine B and C, leave A alone
+dat$v111 <- mapvalues(dat$v111, levels(dat$v111), 
+                      c("A", "BC", "BC", "1", "2", "3", "4"))
+
+# Add blank to C, leave A and B separate
+dat$v112 <- mapvalues(dat$v112, levels(dat$v112), 
+                      c("C", "A", "B", "C", "1",
+                        "2", "3", "4", "5", "6"))
+dat$v113 <- mapvalues(dat$v113, levels(dat$v113), 
+                      c("C", "A", "B", "C", "1",
+                        "2", "3", "4", "5", "6"))
+dat$v114 <- mapvalues(dat$v114, levels(dat$v114), 
+                      c("C", "A", "B", "C", "1",
+                        "2", "3", "4", "5", "6"))
+dat$v115 <- mapvalues(dat$v115, levels(dat$v115), 
+                      c("C", "A", "B", "C", "1",
+                        "2", "3", "4", "5", "6"))
+dat$v116 <- mapvalues(dat$v116, levels(dat$v116), 
+                      c("C", "A", "B", "C", "1",
+                        "2", "3", "4", "5", "6"))
+dat$v117 <- mapvalues(dat$v117, levels(dat$v117), 
+                      c("C", "A", "B", "C", "1",
+                        "2", "3", "4", "5", "6"))
+dat$v118 <- mapvalues(dat$v118, levels(dat$v118), 
+                      c("C", "A", "B", "C", "1",
+                        "2", "3", "4", "5", "6"))
+
+# Combine A and C, leave B separate
+dat$v119 <- mapvalues(dat$v119, levels(dat$v119),
+                     c("AC", "B", "AC", "1", "2", "3", "4"))
+
+# Convert to numeric, bucketing A, B, C into NA
+dat$v120 <- as.numeric(as.character(dat$v120))
+dat$c120 <- ifelse(is.na(dat$v120), 1, 0)
+dat$v120 <- median(dat$v120, na.rm = TRUE)
+dat$v121 <- as.numeric(as.character(dat$v121))
+dat$c121 <- ifelse(is.na(dat$v121), 1, 0)
+dat$v121 <- median(dat$v121, na.rm = TRUE)
+
+# Combine .a, .b, .c into a single bucket
+dat$v122 <- mapvalues(dat$v122, levels(dat$v122), 
+                      c("ABC", "ABC", "ABC", "0", "1", 
+                        "2", "3", "4", "5", "6"))
+
+# Convert to Yes, No, Neither
+dat$v123 <- as.character(dat$v123)
+dat$v123[is.na(dat$v123)] <- "A"
+dat$v123 <- as.factor(dat$v123)
+dat$v123 <- mapvalues(dat$v123, levels(dat$v123), c("East", "West", "A"))
+
+# Construct feature for day of week on which interview takes place
+dat$DayOfWeek <- as.factor(weekdays(as.Date(paste0(
+  dat$v134, "-", dat$v129, "-", dat$v125))))
+dat$DayOfWeek[is.na(dat$DayOfWeek)] <- "Wednesday"
+
+# Drop unnecessary interview time columns
+dat$v124 <- NULL
+dat$v125 <- NULL
+dat$v126 <- NULL
+dat$v127 <- NULL
+dat$v128 <- NULL
+dat$v131 <- NULL
+dat$v133 <- NULL
+dat$v134 <- NULL
+
+# Convert to numeric variable
+dat$v130 <- as.numeric(as.character(dat$v130))
+dat$c130 <- ifelse(is.na(dat$v130), 1, 0)
+dat$v130[is.na(dat$v130)] <- median(dat$v130, na.rm = TRUE)
+dat$v132 <- as.numeric(dat$v132)
+dat$c132 <- ifelse(is.na(dat$v132), 1, 0)
+dat$v132[is.na(dat$v132)] <- median(dat$v132, na.rm = TRUE)
+
+# Merge blank into C and make A, B standalone buckets
+dat$v136 <- mapvalues(dat$v136, levels(dat$v136),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v137 <- mapvalues(dat$v137, levels(dat$v137),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v138 <- mapvalues(dat$v138, levels(dat$v138),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v139 <- mapvalues(dat$v139, levels(dat$v139),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v140 <- mapvalues(dat$v140, levels(dat$v140),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v141 <- mapvalues(dat$v141, levels(dat$v141),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v142 <- mapvalues(dat$v142, levels(dat$v142),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v143 <- mapvalues(dat$v143, levels(dat$v143),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v144 <- mapvalues(dat$v144, levels(dat$v144),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v145 <- mapvalues(dat$v145, levels(dat$v145),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v146 <- mapvalues(dat$v146, levels(dat$v146),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v147 <- mapvalues(dat$v147, levels(dat$v147),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v148 <- mapvalues(dat$v148, levels(dat$v148),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+dat$v149 <- mapvalues(dat$v149, levels(dat$v149),
+                      c("C", "A", "B", "C", "1", 
+                        "2", "3", "4", "5", "6"))
+
+# Convert v150 to factor variable for occupation class
+dat$v150 <- as.character(dat$v150)
+temp <- as.character(floor(as.numeric(dat$v150)/1000))
+dat$v150[!is.na(temp)] <- temp[!is.na(temp)]
+dat$v150 <- as.factor(dat$v150)
+
+# Convert v151 to factor variable for occupation class
+dat$v151 <- as.character(dat$v151)
+temp <- as.character(floor(as.numeric(dat$v151)/1000))
+dat$v151[!is.na(temp)] <- temp[!is.na(temp)]
+dat$v151 <- as.factor(dat$v151)
+
+# Combine .b, .d and leave and .a and .c separately
+dat$v152 <- mapvalues(dat$v152, levels(dat$v152), 
+                      c("A", "BD", "C", "BD", "Yes", "No"))
+
+# Convert to numeric 
+dat$v153 <- as.numeric(as.character(dat$v153))
+dat$c153 <- ifelse(is.na(dat$v153), 1, 0)
+dat$v153[is.na(dat$v153)] <- 1900
+
+# (*) Take these out for now
+dat$v154 <- NULL
+dat$v155 <- NULL
+
+# Combine A and C and leave B
+dat$v156 <- mapvalues(dat$v156, levels(dat$v156),
+                      c("AC", "B", "AC", 
+                      sapply(c(0, 1, 10, 2:9), paste0)))
+
+# Remap the values to A, B, C, D, Yes No
+dat$v157 <- mapvalues(dat$v157, levels(dat$v157),
+                      c("A", "B", "C", "D", "Yes", "No"))
+
+# Use post-coded version instead
+dat$v158 <- NULL
+
+# Combine A, C
+dat$v159 <- mapvalues(dat$v159, levels(dat$v159),
+                      c("AC", "B", "AC", "1", "2", 
+                        "3", "4", "5", "6"))
+
+# Get rid of this, v159 does the job for it
+dat$v160 <- NULL
+
+# Too complex
+dat$v161 <- NULL
+
+# Combine A and C and leave B
+dat$v162 <- mapvalues(dat$v162, levels(dat$v162),
+                      c("AC", "B", "AC", "1", "2", "3"))
+
+# Combine B and D, leave C
+dat$v163 <- mapvalues(dat$v163, levels(dat$v163),
+                      c("BD", "C", "BD", sapply(1:9, paste0)))
+
+# Combine B, C, D and leave A combine 4,6 and 3,9
+dat$v164 <- mapvalues(dat$v164, levels(dat$v164),
+                      c("A", rep("BCD", 3), "1", "2",
+                        "39", "64", "5", "64", "8", "39"))
+
+# Combine A, B, C
+dat$v165 <- mapvalues(dat$v165, levels(dat$v165),
+                      c("ABC", "ABC", "ABC", "1", "2"))
+
+# (*) Shouldn't add any predictive power
+dat$v166 <- NULL
+
+# Remap industry numbers to the letter scale
+f <- levels(dat$v167)
+t <- c("A", "B", "C", "D" ,"1", rep("3", 10), "1", rep("3", 10), 
+       "1", rep("3", 4), "4", rep("5", 4), rep("6", 3), rep("7", 3), 
+       "8", "2", rep("8", 4), rep("9", 2), rep("10", 2), "2", rep("10", 4), 
+       rep("11", 3), "12", "13", "2", rep("13", 6), rep("14", 3),
+       "2", rep("14", 3), "15", "16", rep("17", 3), "2", rep("18", 4),
+       rep("19", 3), rep("20", 2), "21")
+dat$v167 <- mapvalues(dat$v167, f, t)
+
+# Combine levels .b, .c
+dat$c168 <- NA
+dat$c168[is.na(as.numeric(as.character(dat$v168)))] <-
+  as.character(dat$v168)[is.na(as.numeric(as.character(dat$v168)))]
+dat$c168[is.na(dat$c168)] <- "M"
+dat$c168 <- as.factor(dat$c168)
+dat$c168 <- mapvalues(dat$c168, levels(dat$c168), c("A", "B", "C", "D", "M"))
+dat$v168 <- as.numeric(as.character(dat$v168))
+dat$v168[is.na(dat$v168)] <- 0
+
+# Combine .b and .d then leave .a and .c alone
+dat$v169 <- mapvalues(dat$v169, levels(dat$v169),
+                      c("A", "BD", "C", "BD",
+                        sapply(1:9, paste0)))
+dat$v170 <- mapvalues(dat$v170, levels(dat$v170),
+                      c("A", "BD", "C", "BD",
+                        sapply(1:9, paste0)))
+
+# Indicator variable for lives with partner
+dat$v171 <- mapvalues(dat$v171, levels(dat$v171), c("B", "Yes", "No"))
+
+# Combine .a, .b, .c
+dat$v172 <- mapvalues(dat$v172, levels(dat$v172), 
+                      c("ABC", "ABC", "ABC", "Yes", "No"))
+
+# Combine .b, .c, .d
+dat$v173 <- mapvalues(dat$v173, levels(dat$v173),
+                      c("A", "BCD", "BCD", "BCD", "Yes", "No"))
+
+# (*) Can get rid of this for now but MIGHT be important
+dat$v174 <- NULL
+
+# Convert to yes/no
+dat$v175 <- mapvalues(as.factor(dat$v175), c(0, 1), c("No", "Yes"))
+dat$v176 <- mapvalues(as.factor(dat$v176), c(0, 1), c("No", "Yes"))
+
+# Combine .a, .b, .c
+dat$v177 <- mapvalues(dat$v177, levels(dat$v177),
+                      c("ABC", "ABC", "ABC", "1", "2", "3", "4"))
+dat$v178 <- mapvalues(dat$v178, levels(dat$v178),
+                      c("ABC", "ABC", "ABC", "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v179 <- mapvalues(dat$v179, levels(dat$v179),
+                      c("ABC", "ABC", "ABC", "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v180 <- mapvalues(dat$v180, levels(dat$v180),
+                      c("ABC", "ABC", "ABC", "0", "1", "10",
+                        sapply(2:9, paste0)))
+
+# Combine .a and .b
+dat$v181 <- mapvalues(dat$v181, levels(dat$v181),
+                      c("AB", "AB", "C", sapply(1:7, paste0)))
+
+# Combine .b and .d let .a and .c stand
+dat$v182 <- mapvalues(dat$v182, levels(dat$v182),
+                      c("A", "BD", "C", "BD", sapply(1:4, paste0)))
+
+# Merge .a, .b, and .c
+dat$v183 <- mapvalues(dat$v183, levels(dat$v183),
+                      c("ABC", "ABC", "ABC", "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v184 <- mapvalues(dat$v184, levels(dat$v184),
+                      c("ABC", "ABC", "ABC", "0", "1", "10",
+                        sapply(2:9, paste0)))
+
+# Shouldn't be signficant predictor
+dat$v185 <- NULL
+
+# Merge .a and .c
+dat$v186 <- mapvalues(dat$v186, levels(dat$v186),
+                      c("AC", "B", "AC", sapply(1:7, paste0)))
+
+# Combine .a, .b, and .c
+dat$v187 <- mapvalues(dat$v187, levels(dat$v187),
+                      c("ABC", "ABC", "ABC", "Yes", "No"))
+dat$v188 <- mapvalues(dat$v188, levels(dat$v188),
+                      c("A", "BCD", "BCD", "BCD", "Yes", "No"))
+dat$v189 <- mapvalues(dat$v189, levels(dat$v189),
+                      c("ABC", "ABC", "ABC", "0", "1", "10",
+                        sapply(2:9, paste0)))
+
+# Combine .b, .c and leave .a alone
+dat$v190 <- mapvalues(dat$v190, levels(dat$v190),
+                      c("A", "BC", "BC", 
+                        sapply(1:8, paste0)))
+dat$v191 <- mapvalues(dat$v191, levels(dat$v191),
+                      c("A", "BC", "BC", 
+                        sapply(1:8, paste0)))
+
+# Get rid of these columns (ones that follow used instead)
+dat$v192 <- NULL
+dat$v193 <- NULL
+dat$v194 <- NULL
+dat$v195 <- NULL
+dat$v196 <- NULL
+dat$v197 <- NULL
+dat$v198 <- NULL
+dat$v199 <- NULL
+dat$v200 <- NULL
+dat$v201 <- NULL
+dat$v202 <- NULL
+dat$v203 <- NULL
+
+# Create variables for # of each relationship in household
+foo <- function(x){
+  temp <- dat[, which(colnames(dat)=="v204"):
+              which(colnames(dat)=="v215")]==x
+  return(apply(temp, 1, sum))
+}
+dat$HH.Partners <- foo("1")
+dat$HH.Kids <- foo("2")
+dat$HH.Parents <- foo("3")
+dat$HH.Siblings <- foo("4")
+dat$HH.Relatives <- foo("5")
+dat$HH.Other <- foo("6")
+
+# Get rid of unnecessary columns
+dat$v204 <- NULL
+dat$v205 <- NULL
+dat$v206 <- NULL
+dat$v207 <- NULL
+dat$v208 <- NULL
+dat$v209 <- NULL
+dat$v210 <- NULL
+dat$v211 <- NULL
+dat$v212 <- NULL
+dat$v213 <- NULL
+dat$v214 <- NULL
+dat$v215 <- NULL
+
+# Combine 5, 6 and .b, .c, .d
+dat$v216 <- mapvalues(dat$v216, levels(dat$v216),
+                      c("A", "BCD", "BCD", "BCD", "1", 
+                        "2", "3", "4", "65", "65"))
+
+# Change to Yes, No
+dat$v217 <- mapvalues(as.factor(dat$v217), c(0, 1), c("No", "Yes"))
+dat$v218 <- mapvalues(as.factor(dat$v218), c(0, 1), c("No", "Yes"))
+
+# Combine .a, .b, .c
+dat$v219 <- mapvalues(dat$v219, levels(dat$v219), 
+                      c("ABC", "ABC", "ABC", sapply(1:5, paste0)))
+dat$v220 <- mapvalues(dat$v220, levels(dat$v220), 
+                      c("ABC", "ABC", "ABC", sapply(1:7, paste0)))
+dat$v221 <- mapvalues(dat$v221, levels(dat$v221), 
+                      c("ABC", "ABC", "ABC", "Yes", "No"))
+
+# Combine .a, .c but leave .b
+dat$v222 <- mapvalues(dat$v222, levels(dat$v222), 
+                      c("AC", "B", "AC", sapply(1:4, paste0)))
+
+# Merge .a, .b, .c together
+dat$v223 <- mapvalues(dat$v223, levels(dat$v223),
+                      c("ABC", "ABC", "ABC", "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v224 <- mapvalues(dat$v224, levels(dat$v224),
+                      c("ABC", "ABC", "ABC", "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v225 <- mapvalues(dat$v225, levels(dat$v225),
+                      c("ABC", "ABC", "ABC", "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v226 <- mapvalues(dat$v226, levels(dat$v226),
+                      c("ABC", "ABC", "ABC", "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v227 <- mapvalues(dat$v227, levels(dat$v227),
+                      c("ABC", "ABC", "ABC", "0", "1", "10",
+                        sapply(2:9, paste0)))
+
+# Drop all supplementary questionnaire info
+dat$v228 <- NULL
+dat$v229 <- NULL
+dat$v230 <- NULL
+
+# Merge .b, .c, .d together
+dat$v231 <- mapvalues(dat$v231, levels(dat$v231), 
+                      c("A", rep("BCD", 3), sapply(1:6, paste0)))
+
+# Combine .a, .b, .c
+dat$v232 <- mapvalues(dat$v232, levels(dat$v232), 
+                      c(rep("ABC", 3), "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v233 <- mapvalues(dat$v233, levels(dat$v233), 
+                      c(rep("ABC", 3), "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v234 <- mapvalues(dat$v234, levels(dat$v234), 
+                      c(rep("ABC", 3), "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v235 <- mapvalues(dat$v235, levels(dat$v235), 
+                      c(rep("ABC", 3), "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v236 <- mapvalues(dat$v236, levels(dat$v236), 
+                      c(rep("ABC", 3), "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v237 <- mapvalues(dat$v237, levels(dat$v237), 
+                      c(rep("ABC", 3), "0", "1", "10",
+                        sapply(2:9, paste0)))
+dat$v238 <- mapvalues(dat$v238, levels(dat$v238), 
+                      c(rep("ABC", 3), "0", "1", "10",
+                        sapply(2:9, paste0)))
+
+# Combine .b, .c, .d and leave .a out
+dat$v239 <- mapvalues(dat$v239, levels(dat$v239), 
+                      c("A", "BCD", "BCD", sapply(0:7, paste0)))
+
+# Combine .a, .b, .c
+dat$v240 <- mapvalues(dat$v240, levels(dat$v240), 
+                      c("ABC", "ABC", "ABC", sapply(0:7, paste0)))
+
+# Combine .b, .c, .d and leave .a out
+dat$v241 <- mapvalues(dat$v241, levels(dat$v241),
+                      c("A", "BCD", "BCD", "BCD", "Yes", "No"))
+
+# Combine .a, .b, .c
+dat$v242 <- mapvalues(dat$v242, levels(dat$v242),
+                      c("ABC", "ABC", "ABC", "Yes", "No"))
+
+# Combine .b, .c, .d
+dat$v243 <- mapvalues(dat$v243, levels(dat$v243),
+                      c("A", "BCD", "BCD", "BCD", "Yes", "No"))
+
+# Change to Yes, No
+dat$v244 <- mapvalues(as.factor(dat$v244), c(0, 1), c("No", "Yes"))
+dat$v245 <- mapvalues(as.factor(dat$v245), c(0, 1), c("No", "Yes"))
+dat$v246 <- mapvalues(as.factor(dat$v246), c(0, 1), c("No", "Yes"))
+dat$v247 <- mapvalues(as.factor(dat$v247), c(0, 1), c("No", "Yes"))
+
+# Combine .a and .c but leave .b
+dat$v248 <- mapvalues(dat$v248, levels(dat$v248),
+                      c("AC", "B", "AC", "1", "2", "3"))
+
+# Combine .b, .d but leave .a, .c
+dat$v249 <- mapvalues(dat$v249, levels(dat$v249),
+                      c("A", "BD", "C", "BD", "0", "1", "10",
+                        sapply(2:9, paste0)))
+
+# Column made redundant by v251
+dat$v250 <- NULL
+
+# Convert to numeric
+dat$v251 <- as.numeric(as.character(dat$v251))
+dat$v251[is.na(dat$v251)] <- 0
+dat$v252 <- as.numeric(as.character(dat$v252))
+dat$v252[is.na(dat$v252)] <- 0
+
+# Combine .a, .c but leave .b as is
+dat$v253 <- mapvalues(dat$v253, levels(dat$v253),
+                      c("AC", "B", "AC", "1", "2", "3", "4"))
+
+# Combine .b, .c, .d but leave .a
+dat$v254 <- mapvalues(dat$v254, levels(dat$v254),
+                      c("A", rep("BCD", 3), "Yes", "No"))
+
+# Combine .b, .d but leave .a, .c
+dat$v255 <- mapvalues(dat$v255, levels(dat$v255),
+                      c("A", "BD", "C", "BD", "1", "2", "3"))
+
+# Combine 2, ., .a, .b, .c into No and make 1 Yes
+dat$v256 <- mapvalues(dat$v256, levels(dat$v256),
+                      c("No", "Yes", "No", "No", "No", "No"))
+
+# Combine .a, .b, .c 
+dat$v257 <- mapvalues(dat$v257, levels(dat$v257),
+                      c("ABC", "ABC", "ABC", "Yes", "No"))
+
+# Definitely don't need this
+dat$v258 <- NULL
+
+# (***) Let's leave this out for now because IDK what to do
+dat$v259 <- NULL
+dat$v260 <- NULL
+dat$v261 <- NULL
+dat$v262 <- NULL
+dat$v263 <- NULL
+dat$v264 <- NULL
+dat$v265 <- NULL
+dat$v266 <- NULL
+dat$v267 <- NULL
+dat$v268 <- NULL
+dat$v269 <- NULL
+dat$v270 <- NULL
+
+# Bucket Belgium with GB due to low credibility
+write.csv(dat, "trainRF.csv")
+```
+
+
+
+```{r}
+# Get saved training data
+dat <- dat.train
+
+# Convert satisfied from integer to factor
+dat$satisfied <- mapvalues(as.factor(dat$satisfied),
+                           c("0", "1"), c("No", "Yes"))
+
+
+
+
+
+```
+
