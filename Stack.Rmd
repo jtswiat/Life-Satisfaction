@@ -1,0 +1,200 @@
+---
+title: "Stack"
+author: "Matthew Fultz"
+date: "08/03/2020"
+output: pdf_document
+---
+
+```{r}
+# Load necessary libraries
+library(caret)
+library(gbm)
+library(randomForest)
+library(varImp)
+library(glmnet)
+library(dplyr)
+library(pROC)
+
+
+# Define function for loading each dataset
+LoadDataset <- function(name){
+  result <- read.csv(name, header = T)
+  result$X <- NULL
+  return(result)
+}
+
+# Load training and test sets for GBM and RF
+dat.train.gbm <- LoadDataset("trainGBM.csv")
+dat.test.gbm <- LoadDataset("testGBM.csv")
+dat.train.rf <- LoadDataset("trainRF.csv")
+dat.test.rf <- LoadDataset("testRF.csv")
+
+```
+
+
+```{r}
+# Generate folds, initialize results table
+set.seed(20639612)
+i <- createFolds(dat.train.gbm$satisfied, k = 5, list = T, returnTrain = T)
+tG <- expand.grid(alpha = 0:100/100)
+results <- tG
+
+# Loop through each fold, fitting GBM and RF then solving for best alpha
+for (j in 1:5) {
+  
+  # Fit the gbm and get the predicted logits
+  writeLines(paste0("GBM ", j))
+  gbm.f <- gbm((as.numeric(satisfied)-1) ~ . ,
+               data = dat.train.gbm[i[[j]], ],
+               distribution = "bernoulli",
+               n.trees = 1150,
+               interaction.depth = 5,
+               shrinkage = 0.005,
+               n.minobsinnode = 10)
+  gbm.logit <- predict(gbm.f, 
+                       newdata = dat.train.gbm[-i[[j]], ], 
+                       type = "link", 
+                       n.trees = 1150)
+  
+  # Fit the random forest and get the predicted logit
+  writeLines(paste0("RF ", j))
+  rf.f <- randomForest(satisfied ~ ., 
+                       data = dat.train.rf[i[[j]], ],
+                       method = "class",
+                       ntree = 1000,
+                       mtry = 50,
+                       nodesize = 20)
+  rf.preds <- as.vector(predict(rf.f,
+                                newdata = dat.train.rf[-i[[j]], ],
+                                type = "prob")[, 2])
+  rf.logit <- log(rf.preds/(1-rf.preds))
+  
+  # Solve for the optimal alpha in the model alpha*gbm + (1-alpha)*rf
+  writeLines(paste0("AUC Calc ", j))
+  StackAuc <- function(x){
+    stack.logit <- x[1]*gbm.logit + (1-x[1])*rf.logit
+    stack.preds <- exp(stack.logit)/(1+exp(stack.logit))
+    stack.auc <- auc(dat.train.gbm$satisfied[-i[[j]]], stack.preds)
+    return(stack.auc)
+  }
+  
+  results[, paste0("Fold", j)] <- apply(tG, MARGIN = 1, StackAuc)
+  
+}
+(which.max(results$Fold5)-1)/100
+
+```
+
+```{r}
+# STACKED GBM & RF
+
+# Train GBM on full training set
+gbm.f <- gbm((as.numeric(satisfied)-1) ~ . ,
+             data = dat.train.gbm,
+             distribution = "bernoulli",
+             n.trees = 1150,
+             interaction.depth = 5,
+             shrinkage = 0.005,
+             n.minobsinnode = 10)
+
+# Remove variables with 0 relative influence and re-train GBM
+var.rm <- summary(gbm.f)$var[x$rel.inf==0]
+dat.train.gbm <- dat.train.gbm[, -which(colnames(dat.train.gbm) %in% var.rm)]
+gbm.f <- gbm((as.numeric(satisfied)-1) ~ . ,
+             data = dat.train.gbm,
+             distribution = "bernoulli",
+             n.trees = 1150,
+             interaction.depth = 5,
+             shrinkage = 0.005,
+             n.minobsinnode = 10)
+gbm.logit <- predict(gbm.f, 
+                     newdata = dat.test.gbm, 
+                     type = "link", 
+                     n.trees = 1150)
+
+# Fit Random Forest to full train set and predict for test set
+rf.f <- randomForest(satisfied ~ ., 
+                     data = dat.train.rf,
+                     method = "class",
+                     ntree = 1000,
+                     mtry = 50,
+                     nodesize = 20)
+rf.preds <- as.vector(predict(rf.f,
+                              newdata = dat.test.rf,
+                              type = "prob")[, 2])
+rf.logit <- log(rf.preds/(1-rf.preds))
+
+# Stack the GBM and RF using weights of 0.73 and 0.27 respectively
+alpha <- 0.73
+stack.logit <- alpha*gbm.logit + (1-alpha)*rf.logit
+stack.preds <- exp(stack.logit)/(1+exp(stack.logit))
+write.csv(stack.preds, "preds.csv")
+```
+
+
+```{r}
+# STACKED GBM & RF BY COUNTRY
+
+# Get train and test row numbers for each model
+i.train.HU <- which(dat.train.gbm$cntry=="HU")
+i.test.HU <- which(dat.test.gbm$cntry=="HU")
+i.train.IL <- which(dat.train.gbm$cntry=="IL")
+i.test.IL <- which(dat.test.gbm$cntry=="IL")
+i.train.DE <- which(dat.train.gbm$cntry=="DE")
+i.test.DE <- which(dat.test.gbm$cntry=="DE")
+i.train.Other <- which(!(dat.train.gbm$cntry %in% 
+                           c("HU", "IR", "DE")))
+i.test.Other <- which(!(dat.test.gbm$cntry %in% 
+                           c("HU", "IR", "DE")))
+
+# Function that fits to training data and predicts on test
+GetPredictions <- function(i.train, i.test) {
+
+  # Set training and test datasets
+  tr.gbm <- dat.train.gbm[i.train, ]
+  te.gbm <- dat.test.gbm[i.test, ]
+  tr.rf <- dat.train.rf[i.train, ]
+  te.rf <- dat.test.rf[i.test, ]
+  
+  # Train GBM on full training set and fit predictions to test set
+  gbm.f <- gbm((as.numeric(satisfied)-1) ~ . - cntry ,
+               data = tr.gbm,
+               distribution = "bernoulli",
+               n.trees = 1150,
+               interaction.depth = 5,
+               shrinkage = 0.005,
+               n.minobsinnode = 10)
+  gbm.logit <- predict(gbm.f, 
+                       newdata = te.gbm, 
+                       type = "link", 
+                       n.trees = 1150)
+  
+  # Fit Random Forest to full train set and predict for test set
+  rf.f <- randomForest(satisfied ~ . - cntry, 
+                       data = tr.rf,
+                       method = "class",
+                       ntree = 1000,
+                       mtry = 50,
+                       nodesize = 20)
+  rf.preds <- as.vector(predict(rf.f,
+                                newdata = te.rf,
+                                type = "prob")[, 2])
+  rf.logit <- log(rf.preds/(1-rf.preds))
+  
+  # Stack the GBM and RF using weights of 0.73 and 0.27 respectively
+  alpha <- 0.73
+  stack.logit <- alpha*gbm.logit + (1-alpha)*rf.logit
+  stack.preds <- exp(stack.logit)/(1+exp(stack.logit))
+  return(stack.preds)
+  
+}
+
+# Call the function for each needed model
+preds <- rep(NA, nrow(dat.test.gbm))
+preds[i.test.HU] <- GetPredictions(i.train.HU, i.test.HU)
+preds[i.test.IL] <- GetPredictions(i.train.IL, i.test.IL)
+preds[i.test.DE] <- GetPredictions(i.train.DE, i.test.DE)
+preds[i.test.Other] <- GetPredictions(i.train.Other, i.test.Other)
+write.csv(data.frame(Predictions = preds), "predsSeparate.csv")
+```
+
