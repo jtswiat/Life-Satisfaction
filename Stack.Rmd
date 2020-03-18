@@ -1,7 +1,6 @@
 ---
 title: "Stack"
-author: "Matthew Fultz"
-date: "08/03/2020"
+author: "Group"
 output: pdf_document
 ---
 
