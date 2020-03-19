@@ -1,6 +1,7 @@
 ---
 title: "Stack"
-author: "Group"
+author: "Matthew Fultz"
+date: "08/03/2020"
 output: pdf_document
 ---
 
@@ -13,7 +14,6 @@ library(varImp)
 library(glmnet)
 library(dplyr)
 library(pROC)
-
 
 # Define function for loading each dataset
 LoadDataset <- function(name){
@@ -31,58 +31,85 @@ dat.test.rf <- LoadDataset("testRF.csv")
 ```
 
 
-```{r}
+```{r, message=FALSE}
+# CROSS VALIDATION FOR TUNING STACKING WEIGHTS
+
 # Generate folds, initialize results table
 set.seed(20639612)
-i <- createFolds(dat.train.gbm$satisfied, k = 5, list = T, returnTrain = T)
-tG <- expand.grid(alpha = 0:100/100)
+tG <- expand.grid(alpha = 0:100/100, beta = 0:100/100)
+tG <- tG[tG$alpha+tG$beta<=1, ]
 results <- tG
 
-# Loop through each fold, fitting GBM and RF then solving for best alpha
-for (j in 1:5) {
-  
-  # Fit the gbm and get the predicted logits
-  writeLines(paste0("GBM ", j))
-  gbm.f <- gbm((as.numeric(satisfied)-1) ~ . ,
-               data = dat.train.gbm[i[[j]], ],
-               distribution = "bernoulli",
-               n.trees = 1150,
-               interaction.depth = 5,
-               shrinkage = 0.005,
-               n.minobsinnode = 10)
-  gbm.logit <- predict(gbm.f, 
-                       newdata = dat.train.gbm[-i[[j]], ], 
-                       type = "link", 
-                       n.trees = 1150)
-  
-  # Fit the random forest and get the predicted logit
-  writeLines(paste0("RF ", j))
-  rf.f <- randomForest(satisfied ~ ., 
-                       data = dat.train.rf[i[[j]], ],
-                       method = "class",
-                       ntree = 1000,
-                       mtry = 50,
-                       nodesize = 20)
-  rf.preds <- as.vector(predict(rf.f,
-                                newdata = dat.train.rf[-i[[j]], ],
-                                type = "prob")[, 2])
-  rf.logit <- log(rf.preds/(1-rf.preds))
-  
-  # Solve for the optimal alpha in the model alpha*gbm + (1-alpha)*rf
-  writeLines(paste0("AUC Calc ", j))
-  StackAuc <- function(x){
-    stack.logit <- x[1]*gbm.logit + (1-x[1])*rf.logit
-    stack.preds <- exp(stack.logit)/(1+exp(stack.logit))
-    stack.auc <- auc(dat.train.gbm$satisfied[-i[[j]]], stack.preds)
-    return(stack.auc)
+# Loop through number of repeated cvs
+for (k in 1:3) {
+
+  # Partition training data into 5 folds
+  i <- createFolds(dat.train.gbm$satisfied, k = 5, list = T, returnTrain = T)
+
+  # Loop through each fold, fitting GBM and RF then solving for best alpha
+  for (j in 1:5) {
+    
+    # Fit the gbm and get the predicted logits
+    writeLines(paste0("GBM ", k, ".", j))
+    gbm.f <- gbm((as.numeric(satisfied)-1) ~ . ,
+                 data = dat.train.gbm[i[[j]], ],
+                 distribution = "bernoulli",
+                 n.trees = 1150,
+                 interaction.depth = 5,
+                 shrinkage = 0.005,
+                 n.minobsinnode = 10)
+    gbm.logit <- predict(gbm.f, 
+                         newdata = dat.train.gbm[-i[[j]], ], 
+                         type = "link", 
+                         n.trees = 1150)
+    
+    # Fit the random forest and get the predicted logit
+    writeLines(paste0("RF ", k, ".", j))
+    rf.f <- randomForest(satisfied ~ ., 
+                         data = dat.train.rf[i[[j]], ],
+                         method = "class",
+                         ntree = 600,
+                         mtry = 50,
+                         nodesize = 20)
+    rf.preds <- as.vector(predict(rf.f,
+                                  newdata = dat.train.rf[-i[[j]], ],
+                                  type = "prob")[, 2])
+    rf.logit <- log(rf.preds/(1-rf.preds))
+    
+    # Fit the lasso regression model to the data
+    writeLines(paste0("EN ", k, ".", j))
+    lambda.optimal <- 0.002780986
+    resp.col <- which(colnames(dat.train.rf)=="satisfied")
+    x <- model.matrix(~ . , data = dat.train.rf[i[[j]], -c(resp.col)])
+    y <- dat.train.rf[i[[j]], "satisfied"]
+    lasso.f <- glmnet(x, y,
+                  family = "binomial",
+                  alpha = 1,
+                  lambda = lambda.optimal)
+    lasso.preds <- predict(lasso.f, 
+                           newx = model.matrix(~ . , data = dat.train.rf[-i[[j]], -c(resp.col)]), 
+                           type = "response")
+    lasso.preds <- as.vector(lasso.preds)
+    lasso.logit <- log(lasso.preds/(1-lasso.preds))
+    
+    # Solve for the optimal alpha in the model alpha*gbm + (1-alpha)*rf
+    writeLines(paste0("AUC Calc ", k, ".", j))
+    StackAuc <- function(x){
+      stack.logit <- x[1]*gbm.logit + x[2]*rf.logit + (1-x[1]-x[2])*lasso.logit
+      stack.preds <- exp(stack.logit)/(1+exp(stack.logit))
+      stack.auc <- auc(dat.train.gbm$satisfied[-i[[j]]], stack.preds)
+      return(stack.auc)
+    }
+
+    results[, paste0("Rep", k, "Fold", j)] <- apply(tG, MARGIN = 1, StackAuc)
+    
   }
   
-  results[, paste0("Fold", j)] <- apply(tG, MARGIN = 1, StackAuc)
-  
 }
-(which.max(results$Fold5)-1)/100
 
+results$Avg <- apply(results, 1, function(x){mean(x[-c(1,2)])})
 ```
+
 
 ```{r}
 # STACKED GBM & RF
@@ -110,6 +137,7 @@ gbm.logit <- predict(gbm.f,
                      newdata = dat.test.gbm, 
                      type = "link", 
                      n.trees = 1150)
+gbm.preds <- exp(gbm.logit)/(1+exp(gbm.logit))
 
 # Fit Random Forest to full train set and predict for test set
 rf.f <- randomForest(satisfied ~ ., 
@@ -118,16 +146,31 @@ rf.f <- randomForest(satisfied ~ .,
                      ntree = 1000,
                      mtry = 50,
                      nodesize = 20)
-rf.preds <- as.vector(predict(rf.f,
-                              newdata = dat.test.rf,
+rf.preds <- as.vector(predict(rf.f, 
+                              newdata = dat.test.rf, 
                               type = "prob")[, 2])
 rf.logit <- log(rf.preds/(1-rf.preds))
 
+# Fit the Lasso Regression model to the data and predict for test set
+lambda.optimal <- 0.002780986
+resp.col <- which(colnames(dat.train.rf)=="satisfied")
+x <- model.matrix(~ . , data = dat.train.rf[, -c(resp.col)])
+y <- dat.train.rf[ , "satisfied"]
+lasso.f <- glmnet(x, y,
+              family = "binomial",
+              alpha = 1,
+              lambda = lambda.optimal)
+lasso.preds <- predict(lasso.f, 
+                       newx = model.matrix(~ . , data = dat.test.rf), 
+                       type = "response")
+lasso.preds <- as.vector(lasso.preds)
+lasso.logit <- log(lasso.preds/(1-lasso.preds))
+
 # Stack the GBM and RF using weights of 0.73 and 0.27 respectively
-alpha <- 0.73
-stack.logit <- alpha*gbm.logit + (1-alpha)*rf.logit
+alpha <- 0.37
+beta <- 0.36
+stack.logit <- alpha*gbm.logit + beta*rf.logit + (1-alpha-beta)*lasso.logit
 stack.preds <- exp(stack.logit)/(1+exp(stack.logit))
-write.csv(stack.preds, "preds.csv")
 ```
 
 
@@ -196,4 +239,3 @@ preds[i.test.DE] <- GetPredictions(i.train.DE, i.test.DE)
 preds[i.test.Other] <- GetPredictions(i.train.Other, i.test.Other)
 write.csv(data.frame(Predictions = preds), "predsSeparate.csv")
 ```
-
