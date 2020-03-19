@@ -1,0 +1,43 @@
+---
+title: "EN"
+author: "Matthew Fultz"
+date: "18/03/2020"
+output: pdf_document
+---
+
+```{r}
+# Read in training and test csvs
+dat.train <- read.csv("trainRF.csv")
+dat.test <- read.csv("testRF.csv")
+
+# Make some quick fixes to the datasets
+dat.train$X <- NULL
+dat.test$X <- NULL
+
+# Try lasso regression on the data
+x <- model.matrix(~ . , data = dat.train[, -177])
+y <- dat.train[, 177]
+lasso.f <- cv.glmnet(x, y, 
+           family = "binomial", 
+           alpha = 1, 
+           type.measure = "auc",
+           nfolds = 5)
+lasso.lambdas <- data.frame(lambda = lasso.f$lambda, AUC = lasso.f$cvm)
+lambda.optimal <- lasso.lambdas$lambda[which.max(lasso.lambdas$AUC)]
+write.csv(lasso.lambdas, "ENalpha.csv")
+
+# Save the best lasso model (one with optimal alpha)
+lambda.optimal <- 0.002780986
+lasso.f <- glmnet(x, y,
+                  family = "binomial",
+                  alpha = 1,
+                  lambda = lambda.optimal)
+lasso.preds <- predict(lasso.f, 
+                       newx = model.matrix(~ . , data = dat.test), 
+                       type = "response")
+write.csv(lasso.preds, "ENpreds.csv")
+
+lasso.f$beta
+
+```
+

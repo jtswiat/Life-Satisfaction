@@ -1,0 +1,125 @@
+---
+title: "GBM"
+author: "Matthew Fultz"
+date: "01/03/2020"
+output: pdf_document
+---
+
+```{r}
+# Read in training and test csvs
+dat.train <- read.csv("trainGBM.csv")
+dat.test <- read.csv("testGBM.csv")
+
+# Make some quick fixes to the datasets
+dat.train$X <- NULL
+dat.test$X <- NULL
+```
+
+
+```{r}
+# Test out the gbm function on the trianing data
+library(gbm)
+library(varImp)
+myGbm <- gbm((as.numeric(dat.train$satisfied)-1) ~ . ,
+             distribution = "bernoulli",
+             data = dat.train,
+             n.trees = 1150,
+             interaction.depth = 5,
+             shrinkage = 0.005,
+             n.minobsinnode = 20)
+myGbm$trees
+write.csv(myGbm$oobag.improve, "GBMNumTrees.csv")
+# dat.train <- dat.train[, !(colnames(dat.train) %in% x$var[x$rel.inf==0])]
+
+myGbm.logit <- predict(myGbm, 
+                       newdata = dat.test, 
+                       type = "link", 
+                       n.trees = 1150)
+myGbm.preds <- data.frame(Predicted = exp(myGbm.logit)/(1+exp(myGbm.logit)))
+write.csv(myGbm.preds, "GBMpreds.csv")
+x <- summary(myGbm)
+x$var
+
+# Save training prediction results
+train.logit <- predict(myGbm, newdata = dat.train, type = "link", n.trees = 1000)
+train.preds <- data.frame(Predicted = exp(train.logit)/(1+exp(train.logit)))
+write.csv(train.preds, "trainPredsGBM.csv")
+```
+
+
+```{r}
+#################################################################################
+# PARAMETER TUNING HELPER FUNCTIONS
+#################################################################################
+
+# Loads the libraries required for this function
+library(caret)
+library(pROC)
+library(gbm)
+
+# Function that takes in a dataframe and performs cross-validation
+  # using gbm and spits out the average AUC
+GbmCv <- function(dat, numFolds, numTrees, treeDepth, lambda) {
+  
+  i <- createFolds(dat.train$satisfied, k = numFolds, list=T, returnTrain = T)
+  auc.tot <- 0
+  numTrees.optimal <- numTrees
+  for (j in 1:numFolds) {
+    writeLines(paste0("Fold ", j))
+    f.gbm <- gbm(as.numeric(satisfied)-1 ~ . ,
+                 distribution = "bernoulli",
+                 data = dat[i[[j]], ],
+                 n.trees = numTrees.optimal,
+                 interaction.depth = treeDepth,
+                 shrinkage = lambda,
+                 n.minobsinnode = 10)
+    if (j == 1 && length(f.gbm$oob.improve) > 0){
+      numTrees.optimal <- min(numTrees.optimal, which(f.gbm$oobag.improve<=0)[1])
+    }
+    preds.logit <- predict(f.gbm, 
+                           n.trees = numTrees.optimal,
+                           newdata = dat[-i[[j]], ], 
+                           type = "link")
+    preds.prob <- exp(preds.logit)/(1+exp(preds.logit))
+    auc.tot <- auc.tot + auc(dat$satisfied[-i[[j]]], preds.prob)
+  }
+  auc.avg <- auc.tot/numFolds
+  return(auc.avg)
+  
+}
+
+# Takes in a dataframe and tuning grid and returns the cross-validated
+  # AUC for each parameter set
+GbmTuning <- function(dat, numFolds, tuningGrid) {
+  
+  results <- tuningGrid
+  results$AUC <- NA
+  for (i in 1:nrow(tG)) {
+    writeLines(paste0("Param Set ", i))
+    results$AUC[i] <- GbmCv(dat, numFolds, tuningGrid$numTrees[i], 
+                               tuningGrid$treeDepth[i], tuningGrid$lambda[i])
+  }
+  return(results)
+  
+}
+
+#################################################################################
+# PARAMETER TUNING
+#################################################################################
+
+# Set seed for the cross validation
+set.seed(20639612)
+
+# Define the tuning grid
+tG <- expand.grid(numTrees = c(950, 1000, 1050, 1100, 1150, 1200), 
+                  treeDepth = c(5), 
+                  lambda = c(0.005))
+
+# Call the tuning function
+tune <- GbmTuning(dat.train, 5, tG)
+tune
+
+
+```
+
+

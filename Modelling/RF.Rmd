@@ -1,0 +1,122 @@
+---
+title: "RF"
+author: "Matthew Fultz"
+date: "01/03/2020"
+output: pdf_document
+---
+
+```{r}
+# Read in training and test csvs
+dat.train <- read.csv("trainRF.csv")
+dat.test <- read.csv("testRF.csv")
+
+# Make some quick fixes to the datasets
+dat.train$X <- NULL
+dat.test$X <- NULL
+```
+
+
+```{r}
+# Test out the Random Forest function on the training data
+library(randomForest)
+myRf <- randomForest(satisfied ~ ., 
+                     data = dat.train,
+                     method = "class",
+                     ntree = 1000,
+                     mtry = 50,
+                     nodesize = 20)
+myRf.preds <- data.frame(Predicted = predict(myRf, 
+                                             newdata = dat.test, 
+                                             ntree = 1000,
+                                             type = "prob")[, 2])
+write.csv(myRf.preds, "testPredsRF.csv")
+
+write.csv(myRf$err.rate[, 1], "RFNumTrees.csv")
+```
+
+
+```{r}
+#################################################################################
+# PARAMETER TUNING HELPER FUNCTIONS
+#################################################################################
+
+# Loads the libraries required for this function
+library(caret)
+library(pROC)
+library(randomForest)
+
+# Function that takes in a dataframe and performs cross-validation
+  # using rf and spits out the average AUC
+RfCv <- function(dat, numFolds, numTrees, numVars, nodeSize) {
+  
+  i <- createFolds(dat.train$satisfied, k = numFolds, list=T, returnTrain = T)
+  auc.tot <- 0
+  for (j in 1:numFolds) {
+    writeLines(paste0("Fold ", j))
+    f.rf <- randomForest(satisfied ~ . ,
+                         data = dat[i[[j]], ],
+                         method = "class",
+                         ntree = numTrees,
+                         mtry = numVars,
+                         nodesize = nodeSize)
+    preds.prob <- predict(f.rf, 
+                          newdata = dat[-i[[j]], ], 
+                          type = "prob")[, 2]
+    auc.tot <- auc.tot + auc(dat$satisfied[-i[[j]]], preds.prob)
+  }
+  auc.avg <- auc.tot/numFolds
+  return(auc.avg)
+  
+}
+
+# Takes in a dataframe and tuning grid and returns the cross-validated
+  # AUC for each parameter set
+RfTuning <- function(dat, numFolds, tuningGrid) {
+  
+  results <- tuningGrid
+  results$AUC <- NA
+  for (i in 1:nrow(tuningGrid)) {
+    writeLines(paste0("Param Set ", i))
+    results$AUC[i] <- RfCv(dat, numFolds, tuningGrid$numTrees[i],
+                           tuningGrid$numVars[i], tuningGrid$nodeSize[i])
+  }
+  return(results)
+  
+}
+
+#################################################################################
+# PARAMETER TUNING
+#################################################################################
+
+# Set seed for the cross validation
+set.seed(20639612)
+
+# Define the tuning grid
+tG <- expand.grid(numTrees = c(600), 
+                  numVars = c(45, 50, 55),
+                  nodeSize = c(20))
+
+# Call the tuning function
+tune <- RfTuning(dat.train, 5, tG)
+myTune
+myTune <- read.csv("RFNumVarsNodeSizeCombined.csv")
+ggplot(data = myTune, mapping = aes(x = numVars, y = AUC)) + geom_line()
+help("predict.randomForest")
+
+```
+
+```{r}
+# Plot the results
+library(ggplot2)
+ggplot(data = tune, 
+       mapping = aes(x = numTrees, y =  AUC,
+                     color = as.factor(treeDepth))) +
+  geom_line() +
+  labs(title = "CV AUC vs Tuning Parameters", 
+       subtitle = "5-Fold Cross Validation",
+       x = "# of Trees", 
+       y = "AUC",
+       color = "Interaction Depth") +
+  ylim(c(0.8850, 0.8950))
+```
+
