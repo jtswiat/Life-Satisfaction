@@ -1,7 +1,5 @@
 ---
 title: "STAT 441 Project"
-author: "Matthew Fultz"
-date: "20/01/2020"
 output: pdf_document
 ---
 
