@@ -1,7 +1,5 @@
 ---
 title: "Processing - Test"
-author: "Matthew Fultz"
-date: "05/03/2020"
 output: pdf_document
 ---
 
