@@ -1,4 +1,4 @@
-# Life-Satisfaction
+# Life Satisfaction
 
 The goal of this project is to explore the relation between various aspects of someones life and how happy they are. 
 The file train.csv contains information on 30081 survey respondents from different European countries. 
